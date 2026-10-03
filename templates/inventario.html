@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inventario</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="container">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema hospitalario</p>
+          <h1>Inventario</h1>
+        </div>
+        <nav>
+          <a href="/">Dashboard</a>
+          <a href="/pacientes">Pacientes</a>
+          <a href="/doctores">Doctores</a>
+          <a href="/citas">Citas</a>
+          <a href="/facturacion">Facturación</a>
+          <a href="/inventario">Inventario</a>
+        </nav>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Control de stock</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Artículo</th>
+              <th>Categoría</th>
+              <th>Stock</th>
+              <th>Crítico</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for i in inventory %}
+            <tr>
+              <td>{{ i.item }}</td>
+              <td>{{ i.category }}</td>
+              <td>{{ i.stock }}</td>
+              <td>{{ i.critical }}</td>
+              <td><span class="badge {{ 'warning' if i.stock <= i.critical else 'ok' }}">{{ 'Bajo stock' if i.stock <= i.critical else 'Normal' }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </body>
+</html>

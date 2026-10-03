@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Hospital Central</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="container">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema hospitalario</p>
+          <h1>Hospital Central</h1>
+        </div>
+        <nav>
+          <a href="/">Dashboard</a>
+          <a href="/pacientes">Pacientes</a>
+          <a href="/doctores">Doctores</a>
+          <a href="/citas">Citas</a>
+          <a href="/facturacion">Facturación</a>
+          <a href="/inventario">Inventario</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="eyebrow accent">Panel principal</p>
+          <h2>Gestión integral de la clínica</h2>
+          <p>Control de pacientes, especialistas, citas y recursos del hospital.</p>
+        </div>
+        <div class="hero-card">
+          <span class="small-label">Casos críticos</span>
+          <strong>{{ stats.urgent_cases }}</strong>
+          <small>Pacientes bajo atención prioritaria</small>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <div class="stat-card blue">
+          <span>Total pacientes</span>
+          <strong>{{ stats.total_patients }}</strong>
+        </div>
+        <div class="stat-card green">
+          <span>Médicos activos</span>
+          <strong>{{ stats.total_doctors }}</strong>
+        </div>
+        <div class="stat-card orange">
+          <span>Citas registradas</span>
+          <strong>{{ stats.total_appointments }}</strong>
+        </div>
+        <div class="stat-card red">
+          <span>Facturas pendientes</span>
+          <strong>{{ stats.pending_billing }}</strong>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Pacientes recientes</h3>
+            <a href="/pacientes">Ver todos</a>
+          </div>
+          <ul class="list">
+            {% for p in patients %}
+            <li>
+              <div>
+                <strong>{{ p.name }}</strong>
+                <small>{{ p.specialty if p.specialty else p.insurance }}</small>
+              </div>
+              <span class="badge {{ 'warning' if p.status == 'Observación' else 'ok' if p.status == 'Estable' else 'danger' }}">{{ p.status }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h3>Doctores disponibles</h3>
+            <a href="/doctores">Ver todos</a>
+          </div>
+          <ul class="list">
+            {% for d in doctors %}
+            <li>
+              <div>
+                <strong>{{ d.name }}</strong>
+                <small>{{ d.specialty }}</small>
+              </div>
+              <span class="badge {{ 'ok' if d.status == 'Disponible' else 'warning' }}">{{ d.status }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </section>
+
+      <section class="content-grid bottom-grid">
+        <div class="panel wide">
+          <div class="panel-header">
+            <h3>Próximas citas</h3>
+            <a href="/citas">Ver agenda</a>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Paciente</th>
+                <th>Doctor</th>
+                <th>Fecha</th>
+                <th>Hora</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for a in appointments %}
+              <tr>
+                <td>{{ a.patient_name }}</td>
+                <td>{{ a.doctor_name }}</td>
+                <td>{{ a.date }}</td>
+                <td>{{ a.time }}</td>
+                <td><span class="badge {{ 'ok' if a.status == 'Confirmada' else 'warning' if a.status == 'Pendiente' else 'danger' }}">{{ a.status }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

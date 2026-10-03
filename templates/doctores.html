@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Doctores</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="container">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema hospitalario</p>
+          <h1>Doctores</h1>
+        </div>
+        <nav>
+          <a href="/">Dashboard</a>
+          <a href="/pacientes">Pacientes</a>
+          <a href="/doctores">Doctores</a>
+          <a href="/citas">Citas</a>
+          <a href="/facturacion">Facturación</a>
+          <a href="/inventario">Inventario</a>
+        </nav>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Especialistas activos</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Doctor</th>
+              <th>Especialidad</th>
+              <th>Horario</th>
+              <th>Consultorio</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in doctores %}
+            <tr>
+              <td>{{ d.name }}</td>
+              <td>{{ d.specialty }}</td>
+              <td>{{ d.schedule }}</td>
+              <td>{{ d.clinic }}</td>
+              <td><span class="badge {{ 'ok' if d.status == 'Disponible' else 'warning' }}">{{ d.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Citas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="container">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema hospitalario</p>
+          <h1>Agenda de citas</h1>
+        </div>
+        <nav>
+          <a href="/">Dashboard</a>
+          <a href="/pacientes">Pacientes</a>
+          <a href="/doctores">Doctores</a>
+          <a href="/citas">Citas</a>
+          <a href="/facturacion">Facturación</a>
+          <a href="/inventario">Inventario</a>
+        </nav>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Próximas citas</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Paciente</th>
+              <th>Doctor</th>
+              <th>Servicio</th>
+              <th>Fecha</th>
+              <th>Hora</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in citas %}
+            <tr>
+              <td>{{ c.id }}</td>
+              <td>{{ c.patient_name }}</td>
+              <td>{{ c.doctor_name }}</td>
+              <td>{{ c.service }}</td>
+              <td>{{ c.date }}</td>
+              <td>{{ c.time }}</td>
+              <td><span class="badge {{ 'danger' if c.status == 'Urgente' else 'warning' if c.status == 'Pendiente' else 'ok' }}">{{ c.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </body>
+</html>

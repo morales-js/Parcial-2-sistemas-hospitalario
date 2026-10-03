@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Facturación</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="container">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema hospitalario</p>
+          <h1>Facturación</h1>
+        </div>
+        <nav>
+          <a href="/">Dashboard</a>
+          <a href="/pacientes">Pacientes</a>
+          <a href="/doctores">Doctores</a>
+          <a href="/citas">Citas</a>
+          <a href="/facturacion">Facturación</a>
+          <a href="/inventario">Inventario</a>
+        </nav>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Facturas</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Paciente</th>
+              <th>Concepto</th>
+              <th>Monto</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for f in billing %}
+            <tr>
+              <td>{{ f.id }}</td>
+              <td>{{ f.patient }}</td>
+              <td>{{ f.concept }}</td>
+              <td>${{ '{:,.0f}'.format(f.amount) }}</td>
+              <td><span class="badge {{ 'ok' if f.status == 'Pagado' else 'warning' if f.status == 'Parcial' else 'danger' }}">{{ f.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </body>
+</html>

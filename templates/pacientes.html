@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pacientes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <div class="container">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sistema hospitalario</p>
+          <h1>Pacientes</h1>
+        </div>
+        <nav>
+          <a href="/">Dashboard</a>
+          <a href="/pacientes">Pacientes</a>
+          <a href="/doctores">Doctores</a>
+          <a href="/citas">Citas</a>
+          <a href="/facturacion">Facturación</a>
+          <a href="/inventario">Inventario</a>
+        </nav>
+      </header>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h3>Listado de pacientes</h3>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Paciente</th>
+              <th>Documento</th>
+              <th>Edad</th>
+              <th>Seguro</th>
+              <th>Habitación</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in pacientes %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.document }}</td>
+              <td>{{ p.age }}</td>
+              <td>{{ p.insurance }}</td>
+              <td>{{ p.room }}</td>
+              <td><span class="badge {{ 'danger' if p.status == 'Crítico' else 'warning' if p.status == 'Observación' else 'ok' }}">{{ p.status }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  </body>
+</html>
