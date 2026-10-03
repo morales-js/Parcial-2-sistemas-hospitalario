@@ -14,12 +14,6 @@ Este proyecto es una demo rápida de un sistema hospitalario para la entrega del
 - Inventario y stock hospitalario
 - Dashboard con estadísticas generales
 
-## Tecnologías
-
-- Python 3
-- Flask
-- Jinja2
-
 ## Ejecución rápida
 
 1. Crear entorno virtual:
