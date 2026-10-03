@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Control de citas médicas · HIS</title>
+  <meta name="description" content="Módulo de control de citas médicas del Sistema Hospitalario Integrado">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#calendar">Saltar al calendario</a>
+
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Sistema Hospitalario Integrado</p>
+      <h1>Control de citas médicas</h1>
+    </div>
+    <button type="button" class="btn primary" id="btn-new">+ Nueva cita</button>
+  </header>
+
+  <main>
+    <section class="kpis" aria-label="Resumen" aria-live="polite">
+      <article class="kpi"><span class="kpi-value" id="kpi-today">–</span><span class="kpi-label">Citas activas hoy</span></article>
+      <article class="kpi"><span class="kpi-value" id="kpi-week">–</span><span class="kpi-label">Citas activas esta semana</span></article>
+      <article class="kpi"><span class="kpi-value" id="kpi-pending">–</span><span class="kpi-label">Por confirmar (semana)</span></article>
+      <article class="kpi"><span class="kpi-value" id="kpi-cancelled">–</span><span class="kpi-label">Canceladas (semana)</span></article>
+    </section>
+
+    <section class="filters" aria-label="Filtros del calendario">
+      <label>Especialidad
+        <select id="flt-specialty"><option value="">Todas</option></select>
+      </label>
+      <label>Médico
+        <select id="flt-doctor"><option value="">Todos</option></select>
+      </label>
+      <label>Estado
+        <select id="flt-status">
+          <option value="">Todos</option>
+          <option value="programada">Programada</option>
+          <option value="confirmada">Confirmada</option>
+          <option value="completada">Completada</option>
+          <option value="cancelada">Cancelada</option>
+          <option value="no_asistio">No asistió</option>
+        </select>
+      </label>
+      <button type="button" class="btn" id="btn-clear">Limpiar filtros</button>
+      <p class="filter-hint" id="filter-hint"></p>
+    </section>
+
+    <ul class="legend" aria-label="Significado de los símbolos de estado">
+      <li><span aria-hidden="true">◷</span> Programada</li>
+      <li><span aria-hidden="true">✔</span> Confirmada</li>
+      <li><span aria-hidden="true">☑</span> Completada</li>
+      <li><span aria-hidden="true">✖</span> Cancelada</li>
+      <li><span aria-hidden="true">⚠</span> No asistió</li>
+      <li class="legend-tip">El color indica la especialidad. Arrastra una cita para reprogramarla; haz clic en un espacio vacío para agendar.</li>
+    </ul>
+
+    <div class="calendar-card">
+      <div class="loading" id="loading" hidden role="status">Cargando citas…</div>
+      <div id="calendar"></div>
+    </div>
+  </main>
+
+  <!-- ===================== Agendar / reprogramar ===================== -->
+  <dialog id="appointment-dialog" aria-labelledby="appt-title">
+    <form id="appointment-form" novalidate>
+      <header class="dialog-head">
+        <h2 id="appt-title">Agendar cita</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+      </header>
+
+      <div id="form-alert" class="alert" role="alert" hidden></div>
+
+      <div class="grid">
+        <label>Especialidad
+          <select id="f-specialty"></select>
+        </label>
+        <label>Médico <span class="req" aria-hidden="true">*</span>
+          <select id="f-doctor" required aria-describedby="f-doctor-hint"></select>
+          <small id="f-doctor-hint" class="hint"></small>
+        </label>
+
+        <div class="patient-field">
+          <label for="f-patient-search">Paciente <span class="req" aria-hidden="true">*</span></label>
+          <div class="patient-row">
+            <input type="search" id="f-patient-search" placeholder="Buscar por nombre…" autocomplete="off" aria-label="Buscar paciente por nombre">
+            <button type="button" class="btn" id="btn-new-patient">+ Nuevo</button>
+          </div>
+          <select id="f-patient" required aria-label="Paciente"></select>
+        </div>
+
+        <fieldset id="new-patient" class="subform" hidden>
+          <legend>Registrar paciente</legend>
+          <div id="np-alert" class="alert" role="alert" hidden></div>
+          <label>Nombre <span class="req" aria-hidden="true">*</span><input id="np-first" maxlength="80" autocomplete="off"></label>
+          <label>Apellido <span class="req" aria-hidden="true">*</span><input id="np-last" maxlength="80" autocomplete="off"></label>
+          <label>Teléfono<input id="np-phone" inputmode="tel" maxlength="30" autocomplete="off"></label>
+          <label>Correo<input id="np-email" type="email" maxlength="120" autocomplete="off"></label>
+          <label>Fecha de nacimiento<input id="np-birth" type="date"></label>
+          <div class="subform-actions">
+            <button type="button" class="btn" id="np-cancel">Cancelar</button>
+            <button type="button" class="btn primary" id="np-save">Guardar paciente</button>
+          </div>
+        </fieldset>
+
+        <label>Fecha <span class="req" aria-hidden="true">*</span>
+          <input type="date" id="f-date" required>
+        </label>
+        <label>Duración
+          <select id="f-duration">
+            <option value="30">30 minutos</option>
+            <option value="60">1 hora</option>
+            <option value="90">1 hora 30 min</option>
+            <option value="120">2 horas</option>
+          </select>
+        </label>
+      </div>
+
+      <fieldset class="slots-box" aria-describedby="slots-status">
+        <legend>Horario disponible <span class="req" aria-hidden="true">*</span></legend>
+        <div id="slots" class="slots" role="radiogroup" aria-label="Horarios disponibles"></div>
+        <p id="slots-status" class="hint" aria-live="polite"></p>
+        <button type="button" class="btn link" id="btn-next-day" hidden>Buscar el siguiente día con horarios</button>
+      </fieldset>
+
+      <label>Motivo de la consulta <span class="req" aria-hidden="true">*</span>
+        <input id="f-reason" maxlength="255" autocomplete="off" required placeholder="Ej.: Control de presión arterial">
+      </label>
+      <label>Notas (opcional)
+        <textarea id="f-notes" rows="2" maxlength="2000"></textarea>
+      </label>
+
+      <footer class="dialog-foot">
+        <button type="button" class="btn" data-close>Cerrar</button>
+        <button type="submit" class="btn primary" id="f-submit">Agendar cita</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- ===================== Detalle de la cita ===================== -->
+  <dialog id="detail-dialog" aria-labelledby="detail-title">
+    <header class="dialog-head">
+      <h2 id="detail-title">Detalle de la cita</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </header>
+    <div id="detail-alert" class="alert" role="alert" hidden></div>
+    <div id="detail-body"></div>
+    <footer class="dialog-foot wrap" id="detail-actions"></footer>
+  </dialog>
+
+  <!-- ===================== Cancelar ===================== -->
+  <dialog id="cancel-dialog" aria-labelledby="cancel-title">
+    <form id="cancel-form" novalidate>
+      <header class="dialog-head">
+        <h2 id="cancel-title">Cancelar cita</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+      </header>
+      <p id="cancel-summary"></p>
+      <p class="hint">El horario quedará libre para otros pacientes. La cita se conserva en el historial.</p>
+      <div id="cancel-alert" class="alert" role="alert" hidden></div>
+      <label>Motivo de la cancelación <span class="req" aria-hidden="true">*</span>
+        <textarea id="cancel-reason" rows="3" maxlength="255" required placeholder="Ej.: El paciente no puede asistir"></textarea>
+      </label>
+      <footer class="dialog-foot">
+        <button type="button" class="btn" data-close>Volver</button>
+        <button type="submit" class="btn danger" id="cancel-submit">Sí, cancelar cita</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+
+  <script src="/vendor/fullcalendar.js"></script>
+  <script src="/vendor/fullcalendar-es.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
