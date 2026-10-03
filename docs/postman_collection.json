@@ -1,0 +1,186 @@
+{
+  "info": {
+    "name": "HIS · Control de citas médicas",
+    "description": "Colección de pruebas de la API REST. Ejecuta 'Crear cita' primero: guarda el id en la variable {{appointmentId}}. Ajusta {{startAt}} a una fecha futura en horario de atención (lunes a viernes).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "doctorId", "value": "1" },
+    { "key": "patientId", "value": "1" },
+    { "key": "date", "value": "2026-10-12" },
+    { "key": "startAt", "value": "2026-10-12T09:00:00" },
+    { "key": "appointmentId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Salud",
+      "request": { "method": "GET", "url": "{{baseUrl}}/health" },
+      "event": [{ "listen": "test", "script": { "exec": [
+        "pm.test('API y base de datos arriba', () => {",
+        "  pm.response.to.have.status(200);",
+        "  pm.expect(pm.response.json().database).to.eql('up');",
+        "});"
+      ] } }]
+    },
+    {
+      "name": "Catálogos",
+      "item": [
+        { "name": "Especialidades", "request": { "method": "GET", "url": "{{baseUrl}}/specialties" } },
+        { "name": "Médicos", "request": { "method": "GET", "url": "{{baseUrl}}/doctors" } },
+        { "name": "Médico con horario", "request": { "method": "GET", "url": "{{baseUrl}}/doctors/{{doctorId}}" } },
+        {
+          "name": "Disponibilidad del día",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/doctors/{{doctorId}}/availability?date={{date}}&duration=30", "host": ["{{baseUrl}}"], "path": ["doctors", "{{doctorId}}", "availability"], "query": [{ "key": "date", "value": "{{date}}" }, { "key": "duration", "value": "30" }] }
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('devuelve espacios con bandera available', () => {",
+            "  const body = pm.response.json();",
+            "  pm.expect(body.slots).to.be.an('array');",
+            "  if (body.slots.length) pm.expect(body.slots[0]).to.have.property('available');",
+            "});"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Pacientes",
+      "item": [
+        { "name": "Buscar pacientes", "request": { "method": "GET", "url": "{{baseUrl}}/patients?search=ro" } },
+        {
+          "name": "Crear paciente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"firstName\": \"Carmen\",\n  \"lastName\": \"López\",\n  \"phone\": \"5555-1234\",\n  \"email\": \"carmen@example.com\",\n  \"birthDate\": \"1990-05-17\"\n}" },
+            "url": "{{baseUrl}}/patients"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('paciente creado', () => pm.response.to.have.status(201));",
+            "pm.collectionVariables.set('patientId', pm.response.json().id);"
+          ] } }]
+        }
+      ]
+    },
+    {
+      "name": "Citas",
+      "item": [
+        {
+          "name": "Crear cita",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"patientId\": {{patientId}},\n  \"doctorId\": {{doctorId}},\n  \"startAt\": \"{{startAt}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Control de presión arterial\"\n}" },
+            "url": "{{baseUrl}}/appointments"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('cita creada y programada', () => {",
+            "  pm.response.to.have.status(201);",
+            "  const body = pm.response.json();",
+            "  pm.expect(body.status).to.eql('programada');",
+            "  pm.collectionVariables.set('appointmentId', body.id);",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Crear cita en horario ocupado (espera 409)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"patientId\": 2,\n  \"doctorId\": {{doctorId}},\n  \"startAt\": \"{{startAt}}\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Intento duplicado\"\n}" },
+            "url": "{{baseUrl}}/appointments"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('rechaza la doble reserva y sugiere alternativas', () => {",
+            "  pm.response.to.have.status(409);",
+            "  const err = pm.response.json().error;",
+            "  pm.expect(err.code).to.eql('SLOT_TAKEN');",
+            "  pm.expect(err.details.suggestions).to.be.an('array').that.is.not.empty;",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Crear cita fuera de horario (espera 422)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"patientId\": {{patientId}},\n  \"doctorId\": {{doctorId}},\n  \"startAt\": \"2026-10-12T13:00:00\",\n  \"reason\": \"Hora de almuerzo\"\n}" },
+            "url": "{{baseUrl}}/appointments"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('fuera del horario del médico', () => {",
+            "  pm.response.to.have.status(422);",
+            "  pm.expect(pm.response.json().error.code).to.eql('OUTSIDE_SCHEDULE');",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Listar citas de la semana",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/appointments?start=2026-10-12&end=2026-10-19", "host": ["{{baseUrl}}"], "path": ["appointments"], "query": [{ "key": "start", "value": "2026-10-12" }, { "key": "end", "value": "2026-10-19" }] }
+          }
+        },
+        { "name": "Detalle de la cita", "request": { "method": "GET", "url": "{{baseUrl}}/appointments/{{appointmentId}}" } },
+        {
+          "name": "Reprogramar cita",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"startAt\": \"2026-10-12T10:00:00\"\n}" },
+            "url": "{{baseUrl}}/appointments/{{appointmentId}}"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('cita reprogramada', () => {",
+            "  pm.response.to.have.status(200);",
+            "  pm.expect(pm.response.json().startAt).to.eql('2026-10-12T10:00:00');",
+            "});"
+          ] } }]
+        },
+        {
+          "name": "Confirmar cita",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"status\": \"confirmada\" }" },
+            "url": "{{baseUrl}}/appointments/{{appointmentId}}/status"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('cita confirmada', () => pm.expect(pm.response.json().status).to.eql('confirmada'));"
+          ] } }]
+        },
+        {
+          "name": "Cancelar cita sin motivo (espera 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{}" },
+            "url": "{{baseUrl}}/appointments/{{appointmentId}}/cancel"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('exige motivo', () => pm.response.to.have.status(400));"
+          ] } }]
+        },
+        {
+          "name": "Cancelar cita",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{ \"reason\": \"El paciente no puede asistir\" }" },
+            "url": "{{baseUrl}}/appointments/{{appointmentId}}/cancel"
+          },
+          "event": [{ "listen": "test", "script": { "exec": [
+            "pm.test('cita cancelada con motivo', () => {",
+            "  const body = pm.response.json();",
+            "  pm.expect(body.status).to.eql('cancelada');",
+            "  pm.expect(body.cancelReason).to.eql('El paciente no puede asistir');",
+            "});"
+          ] } }]
+        },
+        { "name": "Estadísticas", "request": { "method": "GET", "url": "{{baseUrl}}/appointments/stats" } }
+      ]
+    }
+  ]
+}
