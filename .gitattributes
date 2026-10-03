@@ -1,0 +1,4 @@
+# Evita que Git en Windows convierta los finales de línea (rompe scripts SQL/Docker en Linux)
+* text=auto eol=lf
+*.png binary
+*.jpg binary

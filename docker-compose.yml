@@ -1,0 +1,55 @@
+name: his-citas
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: his-citas-db
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # Guatemala no usa horario de verano: un desfase fijo evita sorpresas.
+      - --default-time-zone=-06:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-cambia_esta_clave_root}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-his_citas}
+      MYSQL_USER: ${MYSQL_USER:-citas_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-cambia_esta_clave_app}
+    ports:
+      - "${DB_PORT:-3307}:3306"
+    volumes:
+      - his_citas_data:/var/lib/mysql
+      # Los .sql se ejecutan en orden alfabético SOLO la primera vez (volumen vacío).
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      # -h 127.0.0.1 fuerza TCP: durante la inicialización MySQL solo escucha por socket,
+      # así el contenedor no se marca "healthy" antes de terminar los scripts.
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: his-citas-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-his_citas}
+      DB_USER: ${MYSQL_USER:-citas_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-cambia_esta_clave_app}
+      CLINIC_TIMEZONE: ${CLINIC_TIMEZONE:-America/Guatemala}
+      SLOT_MINUTES: ${SLOT_MINUTES:-30}
+    ports:
+      - "${API_PORT:-3000}:3000"
+
+volumes:
+  his_citas_data:
